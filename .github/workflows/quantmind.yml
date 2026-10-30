@@ -1,0 +1,73 @@
+name: QuantMind FX probabilistic 2R historical study
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/quantmind_probability.py'
+      - 'tests/test_quantmind_probability.py'
+      - '.github/workflows/quantmind.yml'
+permissions:
+  contents: read
+jobs:
+  quantmind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore verified 2018-25 four-pair H1 price history
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: limit-hist-2018-2025-41095941707
+          restore-keys: |
+            limit-hist-2018-2025-
+            nextcandles-marketdata-
+      - name: Pre-flight tests and probabilistic ML library
+        run: |
+          python -m pip install -r requirements.txt 'scikit-learn>=1.5,<2'
+          python -m pytest -q tests/test_quantmind_probability.py
+          python -m py_compile scripts/quantmind_probability.py
+          npm install --no-audit --no-fund
+      - name: Ensure verified genuine 2018-2025 EURUSD H1 prices
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Ensure verified genuine 2018-2025 GBPUSD AUDUSD USDJPY H1 prices
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '300'
+        run: node scripts/download_portfolio.mjs
+      - name: Train only 2019-22, calibrate 2023H1, evaluate 2023H2 and 2024-25
+        env:
+          OPENBLAS_NUM_THREADS: '2'
+          OMP_NUM_THREADS: '2'
+          MKL_NUM_THREADS: '2'
+        run: python scripts/quantmind_probability.py
+      - name: Save source price cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: quantmind-h1-historical-${{ github.run_id }}
+      - name: Export probability calibration and real-data simulated trade ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantmind-probability-study
+          path: quantmind_results/
+          retention-days: 30
+          if-no-files-found: warn
