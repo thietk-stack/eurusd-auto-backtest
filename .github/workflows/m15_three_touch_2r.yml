@@ -1,0 +1,74 @@
+name: M15 three-touch engulfing, max 10 bars apart, net 2R
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/m15_three_touch_engulf_2r.py'
+      - 'tests/test_m15_three_touch_engulf_2r.py'
+      - '.github/workflows/m15_three_touch_2r.yml'
+permissions:
+  contents: read
+jobs:
+  yearly:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - {year: 2019, year_end: 2020}
+          - {year: 2020, year_end: 2021}
+          - {year: 2021, year_end: 2022}
+          - {year: 2022, year_end: 2023}
+          - {year: 2023, year_end: 2024}
+          - {year: 2024, year_end: 2025}
+          - {year: 2025, year_end: 2026}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore verified real M15 quote history only (never H1 fake data)
+        uses: actions/cache/restore@v4
+        with:
+          path: m15_market
+          key: m15-verified-${{ matrix.year }}-previous
+          restore-keys: |
+            m15-verified-${{ matrix.year }}-
+            m15-three-touch-data-${{ matrix.year }}-
+      - name: Install and test causal three-touch strategy
+        run: |
+          python -m pip install -r requirements.txt
+          npm install --no-audit --no-fund
+          python -m py_compile scripts/m15_three_touch_engulf_2r.py
+          python -m pytest -q tests/test_m15_three_touch_engulf_2r.py tests/test_m15_engulf_hard_zones_2r.py
+          node --check scripts/download_m15_four_pairs.mjs
+      - name: Confirm each original Dukascopy BID and ASK M15 month with SHA256
+        env:
+          M15_FROM: ${{ matrix.year }}-01-01
+          M15_TO: ${{ matrix.year_end }}-01-01
+          M15_MONTHS_PER_RUN: '48'
+        run: node scripts/download_m15_four_pairs.mjs
+      - name: Backtest M15 3 separate touches with 2-10 M15 bar gaps
+        env:
+          M15_YEAR: ${{ matrix.year }}
+        run: python scripts/m15_three_touch_engulf_2r.py
+      - name: Save verified candles so future research does not redownload
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: m15_market
+          key: m15-three-touch-data-${{ matrix.year }}-${{ github.run_id }}
+      - name: Export all trades and actual limit fill counts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m15-three-touch-${{ matrix.year }}
+          path: m15_three_touch_results/
+          retention-days: 30
+          if-no-files-found: warn
