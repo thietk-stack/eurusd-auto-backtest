@@ -1,0 +1,44 @@
+name: Research EURUSD 3 predefined strategies (true H1)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/strategy_research.py'
+      - '.github/workflows/research.yml'
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore immutable verified real price history from the successful backtest
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            .dukascopy-cache
+          key: eurusd-history-41083461646
+          restore-keys: |
+            eurusd-history-
+      - name: Install minimal dependencies and validate offline algorithm tests
+        run: |
+          python -m pip install -r requirements.txt
+          python -m py_compile scripts/strategy_research.py scripts/real_backtest.py
+          python -m pytest -q tests/test_backtest.py
+      - name: Compare three predeclared strategy families and baseline on verified market history
+        run: |
+          python scripts/strategy_research.py --data-dir data --out research_results
+      - name: Upload verified market research report (and trade ledgers)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurusd-research-round-2
+          path: research_results/
+          if-no-files-found: warn
+          retention-days: 30
