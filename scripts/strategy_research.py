@@ -101,8 +101,6 @@ def simulate(d,signals,atr,kind,begin,end,spread=.8):
         if pos and i>entry_idx:
             if i-entry_idx>=cfg["ttl"]:
                 exit_trade(i,o[i],"time");closed_this_bar=True
-            elif kind=="mean_reversion" and ((pos==1 and o[i]>=d.close.iloc[i-1:].head(1).iloc[0]) if False else False):
-                pass
         if pos and i>entry_idx and not closed_this_bar:
             if kind!="session_breakout" and signal[i-1]==-pos:
                 exit_trade(i,o[i],"reverse");closed_this_bar=True
