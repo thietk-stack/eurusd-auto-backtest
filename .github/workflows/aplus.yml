@@ -22,6 +22,8 @@ jobs:
         with:
           path: data
           key: eurusd-history-41083461646
+          restore-keys: |
+            eurusd-history-
       - name: Recover verified GBP USD, AUD USD, USD JPY H1 data
         uses: actions/cache/restore@v4
         with:
