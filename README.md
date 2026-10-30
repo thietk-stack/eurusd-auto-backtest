@@ -71,3 +71,7 @@ Data: 49,877 common H1 observations from real Dukascopy historical Bid/Ask for E
 - [Successful GitHub Actions and all 56 audited CSVs](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41098333270)
 
 H1 engulfing orders wait only for the next ONE H1 bar. H4 engulfing orders wait only for the next ONE H4 bar, evaluated using its underlying four real H1 observations. They are separate candle-pattern timeframes, never a shared H1 signal waiting 4 hours. Both use the midpoint of the **full signal candle range**, stop 1 pip beyond its wick, minimum projected net 1.5 R:R and intended 0.5% equity risk. **None produced a reliable seven-year edge**. Dukascopy H1 OHLC cannot verify exact broker tick fill order or financing, and no live trades are enabled.
+
+## Strict engulfing filter: 2x previous full candle and absolutely no wicks (2019–2025)
+
+[**Vietnamese verified report**](BAO_CAO_ENGULFING_2X_KHONG_RAU_2019_2025.md) · [GitHub Actions](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41099890038). 4 Forex pairs, H1 and H4 engulfing, unchanged next matching candle 50%-range limit. Only **3 H1 and 2 H4 engulfing candles** satisfied the extra strength and zero-wick filter; one limit was placed, none filled after HTF 4-touch qualification. No performance inference is possible from zero fills. No live orders or broker keys.
