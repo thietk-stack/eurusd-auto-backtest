@@ -39,3 +39,11 @@ References: [dukascopy-node](https://github.com/Leo4815162342/dukascopy-node), [
 - [GitHub Actions: verified run and trade ledgers](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41088543737)
 
 Downloaded real Dukascopy H1 Bid/Ask candles for EUR/USD, GBP/USD, AUD/USD, USD/JPY (42,589 common observations; 246/246 additional monthly records verified). Evaluated weekly time-series momentum, cross-sectional currency strength, and equal-weight control. **The selected momentum strategy lost money on 2023–2026 held-out prices after simulated costs. No reliable 5–8% monthly return was demonstrated.** Research only, no live orders, carry/rollover not modeled.
+
+## Pure price action: four-touch hard support/resistance zones (2026-10-30)
+
+- [Fixed zone/reversal rules before testing](DE_CUONG_PRICE_ACTION_VUNG_CUNG.md)
+- [Verified final comparative report](BAO_CAO_PRICE_ACTION_VUNG_CUNG.md)
+- [GitHub Actions completed study](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41092879699)
+
+Two different causal rules: 4 confirmed touches/reversals with the same support or resistance role; and 4 confirmed reactions including both support and resistance (role flips). Fixed 0.5% intended per-position risk, after-cost RR >=1.5, maximum one trade/week across all four FX pairs, NO live trading. **Same-role: -1.06% validation and -2.77% holdout; mixed-role: +2.58% validation but -4.71% holdout. Neither demonstrated durable edge.** Prices are real historical Dukascopy H1, not Exness tick fills. No swap/rollover model.
