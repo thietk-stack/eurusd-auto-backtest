@@ -88,3 +88,12 @@ H1 engulfing orders wait only for the next ONE H1 bar. H4 engulfing orders wait 
 - [Implementation: no H4/D1 zones whatsoever](scripts/m15_three_touch_engulf_2r.py)
 
 Three distinct M15 price-zone reactions: two confirmed same-side pivots and one finished strong M15 engulfing, **2–10 bars apart between consecutive touches**, within a reproducible zone tolerance. Mid-candle LIMIT only during next M15 candle, wick ±1 pip stop, **projected net R:R = 2.0 take profit**, 0.5% intended risk and at most one filled trade/week for four FX pairs. Genuine Dukascopy M15 Bid/Ask, not H1 interpolation. 2019–2025: **53 orders, 13 actual fills, 1 winner, 12 losers; aggregate −$19.33 across seven independent annual $1k simulations**. The strategy **did not demonstrate an edge** and is not connected to a live broker. Keep earlier H4/D1 scripts only for reproducible historical comparisons, not as filters in this new system.
+
+## QuantMind FX — probability-first research with AI and historical case memory (2026-10-31)
+
+- [**Báo cáo kiểm định dự báo xác suất 2019–2025 / NO-GO**](BAO_CAO_QUANTMIND_XAC_SUAT_2019_2025.md)
+- [Pre-registered protocol with 2023 calibration/validation split](DE_CUONG_QUANTMIND_FX_XAC_SUAT.md)
+- [Verified successful 4-pair ML backtest + 18,598 probability forecasts and CSVs](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41142808221)
+- [Executable causal H1 model and historical-case analog veto](scripts/quantmind_probability.py)
+
+Data: real Dukascopy 2018–2025 verified four-pair H1 quote history; 24,898 training event labels (2019–22), 3,094 calibration labels (2023H1), 3,072 validation predictions (2023H2), 12,432 chronological holdout predictions (2024–25). Main classifier plus 40 nearest historical analogs and disagreement veto, 2R net TP / 1R net SL, estimated 0.5% equity risk, no more than one entry a week. **Validation AUC 0.514, later period AUC 0.508, Brier worse than training-prior baseline, predicted maximum probability below 2R breakeven, ZERO eligible trades.** The conclusion is NO-GO. No live execution or ChatGPT API calls per candle; assistant's involvement was in strategy architecture, historical research, and audit. Older backtests in this repository are research comparisons, not previously proven profitable strategies.
