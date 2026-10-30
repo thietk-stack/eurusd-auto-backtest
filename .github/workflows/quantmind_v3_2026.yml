@@ -1,0 +1,101 @@
+name: QuantMind v3 new M1 2026 untouched confirmation versus control
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/quantmind_v3_2026.yml'
+permissions:
+  contents: read
+jobs:
+  monthly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - {month: "2026-01", month_end: "2026-02"}
+          - {month: "2026-02", month_end: "2026-03"}
+          - {month: "2026-03", month_end: "2026-04"}
+          - {month: "2026-04", month_end: "2026-05"}
+          - {month: "2026-05", month_end: "2026-06"}
+          - {month: "2026-06", month_end: "2026-07"}
+          - {month: "2026-07", month_end: "2026-08"}
+          - {month: "2026-08", month_end: "2026-09"}
+          - {month: "2026-09", month_end: "2026-10"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore existing verified REAL M1 candles if possible
+        uses: actions/cache/restore@v4
+        with:
+          path: m1_market
+          key: quantmind-v3-2026-${{ matrix.month }}-${{ github.run_id }}
+          restore-keys: |
+            quantmind-v3-2026-${{ matrix.month }}-
+      - name: Pre-registered temporal tests and quote-data reader validation
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pytest -q tests/test_quantmind_v3_m1_confirm.py tests/test_quantmind_m1_reclaim.py
+          python -m py_compile scripts/quantmind_v3_m1_confirm.py scripts/aggregate_quantmind_v3_2026.py
+          npm install --no-audit --no-fund
+          node --check scripts/download_m1_four_pairs.mjs
+      - name: Download authentic 1 minute Dukascopy BID ASK from 2026 without H1 interpolation
+        env:
+          M1_FROM: "${{ matrix.month }}-01"
+          M1_TO: "${{ matrix.month_end }}-01"
+          M1_MONTHS_PER_RUN: '4'
+        run: node scripts/download_m1_four_pairs.mjs
+      - name: Apply Tue-Thu fixed-window baseline and causal M1 confirmation without tuning
+        env:
+          M1_FROM: "${{ matrix.month }}-01"
+          M1_TO: "${{ matrix.month_end }}-01"
+        run: python scripts/quantmind_v3_m1_confirm.py
+      - name: Preserve audited SHA256 originals
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: m1_market
+          key: quantmind-v3-2026-${{ matrix.month }}-${{ github.run_id }}
+      - name: Export all orders, counts and quote-source metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantmind-v3-${{ matrix.month }}
+          path: |
+            v3_confirmed_reclaim_results/
+            m1_results/
+          retention-days: 30
+          if-no-files-found: warn
+  aggregate:
+    needs: monthly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install scientific audit dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Fetch exactly nine research months, no silent missing months
+        uses: actions/download-artifact@v4
+        with:
+          pattern: quantmind-v3-2026-*
+          path: monthly_v3
+          merge-multiple: false
+      - name: Check SHA2026 year splits, executions, risk budgets and 2R stress
+        run: python scripts/aggregate_quantmind_v3_2026.py
+      - name: Publish frozen summary and full lapsed or filled order ledgers
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantmind-v3-2026-9-months-AUDITED
+          path: quantmind_v3_2026_aggregate/
+          retention-days: 30
+          if-no-files-found: error
