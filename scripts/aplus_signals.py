@@ -185,7 +185,7 @@ def run(index,features,start,end,spread_factor=1.0):
                 risk_lot=(sl_dist_pips+assumed_cost)*dollar_per_pip
                 if risk_lot<=0:continue
                 raw_lot=min(cash*R_BASE_FRACTION*TRADE_R_FRACTION/risk_lot,
-                            cash*MAX_EFFECTIVE_LEVERAGE/(100000*p['open'][i]),.5)
+                            cash*MAX_EFFECTIVE_LEVERAGE/(100000*(1 if sym=='usdjpy' else p['open'][i])),.5)
                 lots=math.floor((raw_lot+1e-10)/.01)*.01
                 if lots<.01:
                     diag['skip_min_lot']+=1;continue
