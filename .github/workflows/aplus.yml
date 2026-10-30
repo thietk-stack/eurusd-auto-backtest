@@ -17,6 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Recover verified EURUSD H1 data
         uses: actions/cache/restore@v4
         with:
@@ -34,6 +37,20 @@ jobs:
           python -m pip install -r requirements.txt
           python -m py_compile scripts/aplus_signals.py scripts/portfolio_research.py
           python -m pytest -q tests/test_backtest.py
+      - name: Re-download verified EURUSD H1 history if its shared cache has expired
+        env:
+          FROM: '2020-01-01'
+          TO: '2026-10-30'
+          MONTHS_PER_RUN: '120'
+        run: |
+          npm install --no-audit --no-fund
+          node scripts/download.mjs
+      - name: Save recovered genuine EURUSD history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: aplus-eurusd-${{ github.run_id }}
       - name: Fixed A+ backtest on four pairs, no synthetic data
         run: |
           python scripts/aplus_signals.py
