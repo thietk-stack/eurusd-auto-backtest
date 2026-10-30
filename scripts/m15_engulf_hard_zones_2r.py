@@ -252,9 +252,29 @@ def replay_year(m15,events,mode,year,stress_multiplier=1.):
         df=m15[p["sym"]]
         end_year=pd.Timestamp(f"{year+1}-01-01",tz="UTC")
         last=int(df.index.searchsorted(end_year))-1
-        # Close on actual last observed BID or ASK of calendar year.
-        value=float(df.bid_close.iloc[last] if p["side"]==1 else df.ask_close.iloc[last])
-        exit_position(p,last,value,"annual_end")
+        # Process EVERY remaining observed M15 quote, even if no further signals
+        # exist. Otherwise an open trade could avoid a real stop/target.
+        for q in range(p["fill_idx"]+1,last+1):
+            v=df.iloc[q];price=None;reason=None
+            if df.index[q]-p["entry_time"]>=pd.Timedelta(hours=MAX_POSITION_HOURS):
+                price=float(v.bid_open if p["side"]==1 else v.ask_open);reason="timeout"
+            elif p["side"]==1:
+                if v.bid_low<=p["stop"]:
+                    price=min(float(v.bid_open),p["stop"]);reason="stop"
+                elif v.bid_high>=p["tp"]:
+                    price=p["tp"];reason="target_2R"
+            else:
+                if v.ask_high>=p["stop"]:
+                    price=max(float(v.ask_open),p["stop"]);reason="stop"
+                elif v.ask_low<=p["tp"]:
+                    price=p["tp"];reason="target_2R"
+            if reason is not None:
+                exit_position(p,q,price,reason)
+                break
+        if pos is not None:
+            # Close on actual last observed BID or ASK, not a made-up mid.
+            value=float(df.bid_close.iloc[last] if p["side"]==1 else df.ask_close.iloc[last])
+            exit_position(p,last,value,"annual_end")
     return pd.DataFrame(ledger),dict(limit_placed=orders,limit_filled=fills,
         no_fill=expired,rejected_at_fill_rr=reject_rr,rejected_minlot=reject_lot)
 
