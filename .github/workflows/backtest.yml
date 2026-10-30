@@ -1,0 +1,60 @@
+name: EURUSD historical download and 2000 trade backtest
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'run.sh'
+      - 'requirements.txt'
+      - 'package.json'
+      - '.github/workflows/backtest.yml'
+  schedule:
+    - cron: '23 3 * * *'
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore verified download progress
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            .dukascopy-cache
+          key: eurusd-history-${{ github.run_id }}
+          restore-keys: |
+            eurusd-history-
+      - name: Download actual historical FX bid/ask, then run OOS backtest
+        id: research
+        env:
+          FROM: '2010-01-01'
+          TO: '2026-10-30'
+          OOS: '2015-01-01'
+          MONTHS_PER_RUN: '24'
+        run: bash run.sh
+      - name: Save partial verified download progress even if incomplete
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data
+            .dukascopy-cache
+          key: eurusd-history-${{ github.run_id }}
+      - name: Upload report or transparent failure/partial download diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurusd-report
+          path: results/
+          if-no-files-found: warn
+          retention-days: 14
