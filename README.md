@@ -75,3 +75,7 @@ H1 engulfing orders wait only for the next ONE H1 bar. H4 engulfing orders wait 
 ## Strict engulfing filter: 2x previous full candle and absolutely no wicks (2019–2025)
 
 [**Vietnamese verified report**](BAO_CAO_ENGULFING_2X_KHONG_RAU_2019_2025.md) · [GitHub Actions](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41099890038). 4 Forex pairs, H1 and H4 engulfing, unchanged next matching candle 50%-range limit. Only **3 H1 and 2 H4 engulfing candles** satisfied the extra strength and zero-wick filter; one limit was placed, none filled after HTF 4-touch qualification. No performance inference is possible from zero fills. No live orders or broker keys.
+
+## New experiment — strong engulfing body >=2× previous body, each wick <=5% (2019–2025)
+
+[Locked protocol](DE_CUONG_ENGULFING_THAN2X_RAU5.md) · [Test source](scripts/htf_engulf_body2x_wick5.py) · [GitHub Actions execution](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41100790578). Keeps the preceding H1/H4 next-candle-only 50% limit entry, H4/D1 four-touch zones, 1-pip wick-based stop, net 1:1.5 minimum planned RR and 0.5% equity designed risk. Neither financial performance nor number of successful fills may be assumed until the workflow outputs a verified report. No live trading.
