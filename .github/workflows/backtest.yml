@@ -8,9 +8,6 @@ on:
       - 'run.sh'
       - 'requirements.txt'
       - 'package.json'
-      - '.github/workflows/backtest.yml'
-  schedule:
-    - cron: '23 3 * * *'
 permissions:
   contents: read
 jobs:
