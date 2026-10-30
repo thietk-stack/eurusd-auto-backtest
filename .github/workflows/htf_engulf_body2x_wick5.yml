@@ -1,0 +1,69 @@
+name: Engulfing H1 H4 body 2x prior body each wick max 5 percent
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/htf_engulf_body2x_wick5.py'
+      - 'tests/test_htf_engulf_body2x_wick5.py'
+      - '.github/workflows/htf_engulf_body2x_wick5.yml'
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Recover verified original FX market data
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: limit-hist-2018-2025-41095941707
+          restore-keys: |
+            nextcandles-marketdata-
+            limit-hist-2018-2025-
+      - name: Preflight tests
+        run: |
+          python -m pip install -r requirements.txt
+          npm install --no-audit --no-fund
+          python -m py_compile scripts/htf_engulf_body2x_wick5.py
+          python -m pytest -q tests/test_htf_engulf_body2x_wick5.py tests/test_htf_engulf_next_candle.py tests/test_backtest.py
+      - name: Confirm genuine EURUSD history from 2018 through 2025
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Confirm genuine GBPUSD AUDUSD USDJPY history from 2018 through 2025
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '300'
+        run: node scripts/download_portfolio.mjs
+      - name: Engulfing body double prior body, with each wick at most 5 percent, next matching candle limit
+        run: python scripts/htf_engulf_body2x_wick5.py
+      - name: Save audited FX history for re-runs
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: body2xwick5-marketdata-${{ github.run_id }}
+      - name: Publish per-year results and every filled trade
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engulf-body2x-wick5-2019-2025
+          path: engulf_body2x_wick5_results/
+          retention-days: 30
+          if-no-files-found: warn
