@@ -1,0 +1,76 @@
+name: M15 strong engulf hard zones fixed net 2R yearly
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/download_m15_four_pairs.mjs'
+      - 'scripts/m15_engulf_hard_zones_2r.py'
+      - 'tests/test_m15_engulf_hard_zones_2r.py'
+      - '.github/workflows/m15_engulf_hard_zones_2r.yml'
+permissions:
+  contents: read
+jobs:
+  yearly:
+    strategy:
+      matrix:
+        year: [2024]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore original verified H1 four-pair prices for frozen H4 and D1 zones
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: body2xwick5-marketdata-41100790578
+          restore-keys: |
+            body2xwick5-marketdata-
+            limit-hist-2018-2025-
+      - name: Restore downloaded real M15 candles for this year
+        uses: actions/cache/restore@v4
+        with:
+          path: m15_market
+          key: m15-verified-${{ matrix.year }}-${{ github.run_id }}
+          restore-keys: |
+            m15-verified-${{ matrix.year }}-
+      - name: Validate no-live-order M15 code and tests
+        run: |
+          python -m pip install -r requirements.txt
+          npm install --no-audit --no-fund
+          node --check scripts/download_m15_four_pairs.mjs
+          python -m py_compile scripts/m15_engulf_hard_zones_2r.py
+          python -m pytest -q tests/test_m15_engulf_hard_zones_2r.py tests/test_htf_engulf_body2x_wick5.py
+      - name: Download REAL four-pair M15 Bid and Ask candles
+        env:
+          M15_FROM: ${{ matrix.year }}-01-01
+          M15_TO: ${{ matrix.year + 1 }}-01-01
+          M15_MONTHS_PER_RUN: '48'
+        run: node scripts/download_m15_four_pairs.mjs
+      - name: Run price-action M15 one-candle-Limit yearly backtest, fixed net 2R TP
+        env:
+          M15_YEAR: ${{ matrix.year }}
+        run: python scripts/m15_engulf_hard_zones_2r.py
+      - name: Preserve verified M15 market data for future re-runs
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: m15_market
+          key: m15-verified-${{ matrix.year }}-${{ github.run_id }}
+      - name: Publish yearly results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m15-hardzone-${{ matrix.year }}
+          path: m15_strong_price_action_results/
+          retention-days: 30
+          if-no-files-found: warn
