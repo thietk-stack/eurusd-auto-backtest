@@ -199,7 +199,8 @@ def main():
         for phase,_,_ in SPLITS:
             a=stages[phase]
             pct=lambda x:f"{x:.2f}%" if x is not None else "N/A"
-            s.append(f"| {name} | {phase} | {a['trades']} | {pct(a['net_pct'])} | {(f'{a['profit_factor']:.3f}' if a['profit_factor'] is not None else 'N/A')} | {pct(a['closed_dd_pct'])} | {pct(a['monthly_compound_pct'])} | {a['months_ge_5']} | {a['months_ge_8']} |")
+            pf=("N/A" if a["profit_factor"] is None else format(a["profit_factor"],".3f"))
+            s.append(f"| {name} | {phase} | {a['trades']} | {pct(a['net_pct'])} | {pf} | {pct(a['closed_dd_pct'])} | {pct(a['monthly_compound_pct'])} | {a['months_ge_5']} | {a['months_ge_8']} |")
     s+=["","**Critical:** Stars/follows represent community attention, not profitability. Neither Github's historic claim nor a positive backtest result guarantees stable 5–8% monthly. Equity drawdown is estimated from closed trades only. Intrabar orders use stop-first conservative approximations. Exness real spread/swap/slippage not verified. Original reference used fixed 5,000 units while here sizing is 0.5% risk <=5x leverage, so results are NOT directly comparable to claimed +938%."]
     (out/"REPORT_VI.md").write_text("\n".join(s))
     print("BENCHMARK COMPLETE",json.dumps({n:{p:round(result[n][p]["net_pct"],3) for p,_,_ in SPLITS} for n in result}),flush=True)
