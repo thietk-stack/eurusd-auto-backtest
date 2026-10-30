@@ -66,3 +66,12 @@ def test_only_research_not_live_and_no_double_spread():
     assert stats["accepted"]==len(trades)
     if len(trades):
         assert all(trades.planned_risk_usd<=trades.max_planned_risk_usd+1e-6)
+
+def test_spread_stress_cannot_increase_pnl_when_same_trades():
+    from quantmind_m1_reclaim import stress_cost_only
+    import pandas as pd
+    d=pd.DataFrame([dict(pair="eurusd",entry_executable_quote=1.1,
+         entry_spread_pips=1.,lots=.05,pnl_usd=2.0,account_usd=1002.)])
+    stress=stress_cost_only(d)
+    assert stress.pnl_usd.iloc[0]<d.pnl_usd.iloc[0]
+    assert abs(stress.pnl_usd.iloc[0]-1.5)<1e-9
