@@ -52,7 +52,10 @@ def main():
             for mode in ("reversal","continuation"):
                 f=folder/(mode+"_trades.csv")
                 if not f.exists():raise FileNotFoundError(str(f))
-                t=pd.read_csv(f)
+                try:
+                    t=pd.read_csv(f)
+                except pd.errors.EmptyDataError:
+                    t=pd.DataFrame()  # zero-trade month emits an empty CSV
                 if len(t)>0:
                     if t.time.str.slice(0,7).ne(label).any():raise AssertionError("Cross-period entry")
                     if (t.planned_risk_usd>t.max_planned_risk_usd+1e-6).any():
