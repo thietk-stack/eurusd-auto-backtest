@@ -86,6 +86,10 @@ def build_zone_snapshots(prices):
         for event in pivots:
             confirmed,p,role,price=event
             seen.append(event)
+            # Drop pivots older than the stated 4320 observed H1 bar lookback.
+            # These pivots cannot belong to any new cohort, so no signal changes.
+            while seen and p-seen[0][1]>ZONE_HISTORY:
+                seen.pop(0)
             # Zone half-width: 6 pips or 0.75 x median observed H1 candle range,
             # computed from past bars only. 4-touch cohort must fit within +/- width.
             width=max(6*pip, .75*rng[confirmed])
