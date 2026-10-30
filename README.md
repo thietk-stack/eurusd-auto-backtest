@@ -79,3 +79,12 @@ H1 engulfing orders wait only for the next ONE H1 bar. H4 engulfing orders wait 
 ## New experiment — strong engulfing body >=2× previous body, each wick <=5% (2019–2025)
 
 [Locked protocol](DE_CUONG_ENGULFING_THAN2X_RAU5.md) · [Test source](scripts/htf_engulf_body2x_wick5.py) · [GitHub Actions execution](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41100790578). Keeps the preceding H1/H4 next-candle-only 50% limit entry, H4/D1 four-touch zones, 1-pip wick-based stop, net 1:1.5 minimum planned RR and 0.5% equity designed risk. Neither financial performance nor number of successful fills may be assumed until the workflow outputs a verified report. No live trading.
+
+## Latest research: M15 only, 3 confirmed touches within 10 M15 candles, 2R TP (2026-10-30)
+
+- [**Verified seven-year report (2019–2025)**](BAO_CAO_M15_3_CHAM_10_NEN_TP2R_2019_2025.md)
+- [Frozen M15-only three-touch specifications](DE_CUONG_M15_3_CHAM_TOI_DA_10_NEN_2R.md)
+- [Successfully completed GitHub Actions with annual source CSVs](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41104800811)
+- [Implementation: no H4/D1 zones whatsoever](scripts/m15_three_touch_engulf_2r.py)
+
+Three distinct M15 price-zone reactions: two confirmed same-side pivots and one finished strong M15 engulfing, **2–10 bars apart between consecutive touches**, within a reproducible zone tolerance. Mid-candle LIMIT only during next M15 candle, wick ±1 pip stop, **projected net R:R = 2.0 take profit**, 0.5% intended risk and at most one filled trade/week for four FX pairs. Genuine Dukascopy M15 Bid/Ask, not H1 interpolation. 2019–2025: **53 orders, 13 actual fills, 1 winner, 12 losers; aggregate −$19.33 across seven independent annual $1k simulations**. The strategy **did not demonstrate an edge** and is not connected to a live broker. Keep earlier H4/D1 scripts only for reproducible historical comparisons, not as filters in this new system.
