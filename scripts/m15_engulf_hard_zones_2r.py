@@ -7,7 +7,7 @@ CANDLE. Stop beyond signal M15 extreme by one pip, target 2R NET projected.
 Actual Dukascopy BID+ASK OHLC for limit, stop and TP; no generated M15 bars.
 No real trades, Exness broker integration, swap, volume, or economic calendar.
 """
-import gzip, hashlib, json, math
+import gzip, hashlib, json, math, os
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from htf_limit_mid_yearly import historical_prices
 from htf_hard_zones_engulf import build_all, CFG
 from htf_engulf_body2x_wick5 import is_strong_body_engulfing
 
-YEARS=tuple(range(2019,2026))
+YEARS=(int(os.environ['M15_YEAR']),) if os.environ.get('M15_YEAR') else tuple(range(2019,2026))
 MODES=("H4_same","H4_flip","D1_same","D1_flip")
 START=1000.
 RISK=.005
@@ -30,7 +30,7 @@ M15_COLUMNS=["timestamp","open","high","low","close","bid_open","bid_high","bid_
 
 def load_m15():
     raw={}
-    months=[str(x) for x in pd.period_range("2019-01","2025-12",freq="M")]
+    months=[f"{year}-{month:02d}" for year in YEARS for month in range(1,13)]
     manifest_audit={}
     for sym in SYMBOLS:
         frames=[]
