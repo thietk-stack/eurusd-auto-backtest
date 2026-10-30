@@ -157,8 +157,7 @@ def split(frame):
     # LABEL EXAMINES an entire potential 24-bar path before first-touch.
     # Purge 24 H1 observations before boundary using global index time.
     for name,part,end in (("train",train,TRAIN_END),("cal",cal,CAL_END),("validation",val,VAL_END),("holdout",test,TEST_END)):
-        last_boundary=np.datetime64(end+"T00:00:00")
-        # Apply actual time checking through time at i+HORIZON-1 later in main
+        # Full-horizon boundary purge is applied in main() using timestamps.
         yield name,part
 
 def probabilities(train,cal,others):
@@ -261,11 +260,11 @@ def metrics(trades):
          monthly_5=int((monthly>=CAPITAL*.05).sum()),
          months=int(len(monthly)))
 
-def predictive_quality(part):
+def predictive_quality(part,training_prior):
     if part.empty:return None
     y=part.y.to_numpy(int)
     p=part.prob_guarded.to_numpy(float)
-    baseline=float(y.mean())
+    baseline=float(training_prior)  # fixed in 2019-22, NOT oracle test mean
     brier=brier_score_loss(y,p)
     return dict(observations=len(part),actual_win_rate=float(y.mean()),
       brier=float(brier),constant_prior_brier=float(brier_score_loss(y,np.full(len(y),baseline))),
@@ -296,7 +295,7 @@ def main():
       [(k,components[k]) for k in ("cal","validation","holdout")]))
     output={}
     for name,part in outputs.items():
-        quality=predictive_quality(part)
+        quality=predictive_quality(part,float(components["train"].y.mean()))
         trades=simulation(part,prices)
         stressed=simulation(part,prices,spread_factor=2)
         if not trades.empty:
