@@ -296,6 +296,21 @@ def main():
     output={}
     for name,part in outputs.items():
         quality=predictive_quality(part,float(components["train"].y.mean()))
+        # Read-only probability audit: NO model, threshold or selection changes.
+        quality["probabilities"]=dict(
+          model_max=float(part.prob_ml.max()),
+          memory_max=float(part.prob_memory.max()),
+          guarded_max=float(part.prob_guarded.max()),
+          guarded_p50=float(part.prob_guarded.quantile(.5)),
+          guarded_p95=float(part.prob_guarded.quantile(.95)),
+          guarded_p99=float(part.prob_guarded.quantile(.99)),
+          guarded_ge_40=int((part.prob_guarded>=.40).sum()),
+          guarded_ge_48=int((part.prob_guarded>=.48).sum()),
+          model_memory_disagreement_mean=float((part.prob_ml-part.prob_memory).abs().mean()))
+        audit_cols=["time","symbol","side","prob_ml","prob_memory",
+          "prob_guarded","expected_net_R","analog_wins","y","net_pips",
+          "risk_pips","target_pips","cost_pips","exit_reason"]
+        part[audit_cols].to_csv(OUT/(name+"_all_probability_forecasts.csv"),index=False)
         trades=simulation(part,prices)
         stressed=simulation(part,prices,spread_factor=2)
         if not trades.empty:
