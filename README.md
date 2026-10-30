@@ -63,3 +63,11 @@ Tested 4 preregistered strategies on genuine historical Dukascopy bid/ask H1 acr
 - [Successful GitHub Actions with all 28 yearly CSV ledgers](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41095941707)
 
 Data: 49,877 common H1 observations from real Dukascopy historical Bid/Ask for EUR/USD, GBP/USD, AUD/USD and USD/JPY. Backtested seven separate calendar years with $1,000 initial simulated balance **reset for each year**, 4 price-action zone modes and spread stress tests. BUY limit at 50% of full bullish engulfing High–Low, SL 1 pip below its wick; symmetric SELL. Orders have **12 observed H1 bar expiry** and may never fill; 0.5R risk budget, projected net R:R >= 1.5. **None showed reliably positive yearly returns**. No real trading or broker credentials; missing real Exness tick/slippage/swap data. Not a profit guarantee.
+
+## Corrected H1 vs H4 engulfing signals: limit only in NEXT matching candle (Oct 30, 2026)
+
+- [Báo cáo đúng yêu cầu: bảng 2019–2025, tám phiên bản, 1.078 lệnh được khớp](BAO_CAO_H1_H4_ENGULFING_LIMIT_1_NEN.md)
+- [Frozen detailed research rules](DE_CUONG_ENGULFING_H1_H4_NEN_KE_TIEP.md)
+- [Successful GitHub Actions and all 56 audited CSVs](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41098333270)
+
+H1 engulfing orders wait only for the next ONE H1 bar. H4 engulfing orders wait only for the next ONE H4 bar, evaluated using its underlying four real H1 observations. They are separate candle-pattern timeframes, never a shared H1 signal waiting 4 hours. Both use the midpoint of the **full signal candle range**, stop 1 pip beyond its wick, minimum projected net 1.5 R:R and intended 0.5% equity risk. **None produced a reliable seven-year edge**. Dukascopy H1 OHLC cannot verify exact broker tick fill order or financing, and no live trades are enabled.
