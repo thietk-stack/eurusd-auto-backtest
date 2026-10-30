@@ -26,7 +26,7 @@ def test_stop_first_when_target_and_stop_in_same_bar():
     x=label_first_touch(d,0,1,1.1000,10,23,1,.0001)
     assert not x["target_hit"]
     assert x["reason"]=="stop"
-    assert x["net_pips"]<=-11
+    assert abs(x["net_pips"]+11)<1e-8
 
 def test_symmetric_short_tp():
     d=market([1.1005]*24,[1.0965]*24,[1.1]*24,[1.098]*24)
