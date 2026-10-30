@@ -20,7 +20,7 @@ def test_buy_real_ask_low_must_touch_limit():
 def test_sell_real_bid_high_must_touch_limit():
     d=prices(1.1051,1.1049,1.1048,1.10499,1.104,1.1059)
     assert try_fill(d,0,signal(-1,1.105,1.107)) is None
-    d=prices(1.1051,1.1049,1.10501,1.1050,1.104,1.1059)
+    d=prices(1.1051,1.1049,1.10499,1.10501,1.104,1.1059)
     assert try_fill(d,0,signal(-1,1.105,1.107))==1.105
 
 def test_gap_beyond_stop_skipped():
