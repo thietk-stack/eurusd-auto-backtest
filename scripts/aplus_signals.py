@@ -198,7 +198,26 @@ def run(index,features,start,end,spread_factor=1.0):
             # At same timestamp pick highest score, then stronger RR, then alphabetic pair.
             choices.sort(key=lambda x:(-x['score'],-x['rr'],x['sym'], -x['direction']))
             pos=choices[0];last_used_week=week;diag['used_weeks']+=1
-            # Entry-bar stops/targets are resolved on next iteration; see caveat below.
+            # Intrabar stop/target on the entry candle must be handled immediately.
+            # If both are hit, the stop wins. Entry itself is at the open.
+            p=features[pos['sym']]
+            first_stop=(p['lo'][i]<=pos['stop']) if pos['direction']>0 else (p['hi'][i]>=pos['stop'])
+            first_target=(p['hi'][i]>=pos['tp']) if pos['direction']>0 else (p['lo'][i]<=pos['tp'])
+            if first_stop or first_target:
+                exit_mid=(min(p['open'][i],pos['stop']) if pos['direction']>0 else max(p['open'][i],pos['stop'])) if first_stop else pos['tp']
+                pip=PIPS[pos['sym']]
+                per_pip=10 if pos['sym']!='usdjpy' else 1000/max(exit_mid,1)
+                gross=pos['direction']*(exit_mid-pos['entry_mid'])/pip*per_pip*pos['lots']
+                fee=(pos['entry_spread']*spread_factor+2*SLIPPAGE_PER_SIDE_PIPS)*per_pip*pos['lots']
+                cash+=gross-fee
+                trades.append(dict(entry_time=time.isoformat(),exit_time=time.isoformat(),
+                    pair=pos['sym'],direction='LONG' if pos['direction']>0 else 'SHORT',
+                    score=pos['score'],divergence=pos['div'],lots=pos['lots'],entry_mid=pos['entry_mid'],
+                    exit_mid=exit_mid,stop=pos['stop'],target=pos['tp'],designed_R_usd=pos['risk'],
+                    initial_rr_net=pos['rr'],gross_pnl_usd=gross,cost_usd=fee,
+                    net_pnl_usd=gross-fee,equity_usd=cash,
+                    exit_reason='first_bar_stop' if first_stop else 'first_bar_target'))
+                pos=None
     if pos is not None:
         # Liquidate at final market close to prevent hiding floating losses.
         p=features[pos['sym']];i=i1-1;pip=PIPS[pos['sym']]
@@ -253,10 +272,6 @@ def main():
     v=results['validation']['main'];h=results['holdout']['main']
     can_proceed=bool(v['trades']>=40 and v['net_pct']>0 and (v['pf'] or 0)>1.10 and
         v['closed_trade_dd_pct']>=-15 and h['trades']>=40 and h['net_pct']>0 and
-        (h['pf'] or 0)>1.10 and results['holdout']['spread_x2']['main']['net_pct']>0) if False else False
-    # Explicitly assign from actual available dict without accidentally bypassing conditions.
-    can_proceed=bool(v['trades']>=40 and v['net_pct']>0 and (v['pf'] or 0)>1.10 and
-        v['closed_trade_dd_pct']>=-15 and h['trades']>=40 and h['net_pct']>0 and
         (h['pf'] or 0)>1.10 and results['holdout']['spread_x2']['net_pct']>0 and
         h['closed_trade_dd_pct']>=-15)
     audit=dict(status='HISTORICAL_BACKTEST_ONLY',data='Dukascopy H1 bid/ask, not Exness',
@@ -268,7 +283,7 @@ def main():
        cost='Dukascopy observed spread at entry/exit proxy, 0.1 pip each side; no Exness historical execution nor swap',
        tested=results,passes_strict_gate=can_proceed,live_orders=0,
        caveats=['OHLC H1 execution approximation','No stop-loss guarantee on a gap',
-           'Not all-candle or tick-level fill','Entry-bar stop/target not checked until following candle',
+           'Not all-candle or tick-level fill','Entry-bar stop-first resolution uses H1 candle high/low without exact tick sequence',
            'No historical news calendar filter','No rollover/swap modeled'])
     (out/'RESULTS_APLUS.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
     lines=['# Kiểm định tín hiệu A+ 4 cặp Forex — chiến lược hội tụ nhiều yếu tố','',
