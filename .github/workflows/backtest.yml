@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/**'
+      - 'scripts/download.mjs'
+      - 'scripts/real_backtest.py'
       - 'run.sh'
       - 'requirements.txt'
       - 'package.json'
