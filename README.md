@@ -31,3 +31,11 @@ References: [dukascopy-node](https://github.com/Leo4815162342/dukascopy-node), [
 ## Bounded three-strategy follow-up research (2026-10-30)
 
 [Đọc báo cáo vòng 2](BAO_CAO_NGHIEN_CUU_VONG_2.md) · [Kết quả GitHub Actions](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41085764980). Tested trend filter, mean reversion and UTC session breakout against Donchian18 on actual historical Dukascopy EURUSD H1 (not Exness tick history). **None met the precommitted validation criterion. No 5–8% monthly edge has been demonstrated.** Live trading is not enabled.
+
+## Four-pair quantitative portfolio research (2026-10-30)
+
+- [**Báo cáo kết quả bốn cặp Forex**](BAO_CAO_DANH_MUC_4_CAP.md)
+- [Đề cương nghiên cứu được đóng băng](DE_CUONG_DANH_MUC_4_CAP.md)
+- [GitHub Actions: verified run and trade ledgers](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41088543737)
+
+Downloaded real Dukascopy H1 Bid/Ask candles for EUR/USD, GBP/USD, AUD/USD, USD/JPY (42,589 common observations; 246/246 additional monthly records verified). Evaluated weekly time-series momentum, cross-sectional currency strength, and equal-weight control. **The selected momentum strategy lost money on 2023–2026 held-out prices after simulated costs. No reliable 5–8% monthly return was demonstrated.** Research only, no live orders, carry/rollover not modeled.
