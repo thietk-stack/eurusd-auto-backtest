@@ -202,6 +202,22 @@ def simulate(quotes,events,mode,spread_stress=False):
         count["accepted"]+=1;busy_until=df.index[k];last_week=wk
     return pd.DataFrame(trades),count
 
+def stress_cost_only(trades):
+    """Reprice the SAME entries and original TP/SL with extra observed spread.
+    Reusing realized paths avoids giving extra spread a better profit target.
+    This is a conservative *cost sensitivity*, not a new broker tick replay.
+    """
+    if trades.empty:return trades.copy()
+    t=trades.copy()
+    point=np.where(t.pair.to_numpy()=="usdjpy",
+        1000/np.maximum(t.entry_executable_quote.to_numpy(float),1),
+        10.)
+    t["added_spread_cost_usd"]=t.entry_spread_pips.to_numpy(float)*point*t.lots.to_numpy(float)
+    t["pnl_usd"]=t.pnl_usd-t.added_spread_cost_usd
+    t["account_usd"]=START_EQUITY+t.pnl_usd.cumsum()
+    if (t.added_spread_cost_usd<0).any():raise AssertionError("Spread stress must cost >=0")
+    return t
+
 def performance(trades,counts):
     if trades.empty:
         return dict(trades=0,net_return_pct=0.,win_rate=None,pf=None,
@@ -229,9 +245,9 @@ def main():
         events,diag=event_candidates(data,mode)
         trades,count=simulate(data,events,mode)
         trades.to_csv(OUT/f"{mode}_trades.csv",index=False)
-        stressed,stress_count=simulate(data,events,mode,spread_stress=True)
+        stressed=stress_cost_only(trades)
         results[mode]=dict(performance=performance(trades,count),
-             spread_x2=performance(stressed,stress_count),signals=diag)
+             spread_x2=performance(stressed,count),signals=diag)
         print("RECLAIM",mode,"candidate",len(events),"filled",len(trades),
             "net_pct",round(results[mode]["performance"]["net_return_pct"],4),flush=True)
     all_months=month_list(start,end)
@@ -246,7 +262,7 @@ def main():
         max_hold_mins=MAX_HOLD_MINS,results=results,live_orders=0,
         caveats=["M1 OHLC not tick; same-minute fill versus stop order unknown; stop-first",
           "Dukascopy is quote provider, not centralized FX order-flow/order book",
-          "Spreads on bid/ask quote open and OHLC, slippage 0.1pip each way, no swap/latency/exness fills",
+          "Spread sensitivity x2 keeps identical trades, original TP/SL and lots and subtracts one extra quoted entry spread; no favorable repricing of TP",
           "Period subset may not be a complete year; never annualize percentage without evidence",
           "One-sided Wilson lower 95% bound cannot by itself account for dependence/nonstationarity"])
     (OUT/"RESULTS_M1_RECLAIM.json").write_text(json.dumps(completed,ensure_ascii=False,indent=2))
