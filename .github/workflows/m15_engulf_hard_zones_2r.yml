@@ -13,11 +13,24 @@ permissions:
 jobs:
   yearly:
     strategy:
+      fail-fast: false
+      max-parallel: 2
       matrix:
         include:
+          - year: 2019
+            year_end: 2020
+          - year: 2020
+            year_end: 2021
+          - year: 2021
+            year_end: 2022
+          - year: 2022
+            year_end: 2023
+          - year: 2023
+            year_end: 2024
           - year: 2024
             year_end: 2025
-      fail-fast: false
+          - year: 2025
+            year_end: 2026
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
