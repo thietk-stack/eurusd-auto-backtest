@@ -1,0 +1,65 @@
+name: H4 D1 hard zones plus H1 engulfing research
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/htf_hard_zones_engulf.py'
+      - '.github/workflows/htf_price_action.yml'
+permissions:
+  contents: read
+jobs:
+  htf_research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore verified EURUSD H1 data
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: aplus-eurusd-41091173869
+          restore-keys: |
+            priceaction-eurusd-
+            aplus-eurusd-
+      - name: Restore other three verified FX pairs
+        uses: actions/cache/restore@v4
+        with:
+          path: portfolio_data
+          key: fx4-h1-41088543737
+          restore-keys: |
+            fx4-h1-
+      - name: Install and offline syntax tests
+        run: |
+          python -m pip install -r requirements.txt
+          python -m py_compile scripts/htf_hard_zones_engulf.py scripts/portfolio_research.py
+          python -m pytest -q tests/test_backtest.py
+          npm install --no-audit --no-fund
+      - name: Ensure full verified real EURUSD history without synthetic substitutes
+        env:
+          FROM: '2020-01-01'
+          TO: '2026-10-30'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Cache validated EURUSD data
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: htf-eurusd-${{ github.run_id }}
+      - name: Run four fixed H4 D1 zone interpretations with H1 engulfing
+        run: python scripts/htf_hard_zones_engulf.py
+      - name: Upload source-of-truth metrics and historical trades
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: htf-four-touch-engulfing-results
+          path: htf_zone_results/
+          if-no-files-found: warn
+          retention-days: 30
