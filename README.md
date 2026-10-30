@@ -47,3 +47,11 @@ Downloaded real Dukascopy H1 Bid/Ask candles for EUR/USD, GBP/USD, AUD/USD, USD/
 - [GitHub Actions completed study](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41092879699)
 
 Two different causal rules: 4 confirmed touches/reversals with the same support or resistance role; and 4 confirmed reactions including both support and resistance (role flips). Fixed 0.5% intended per-position risk, after-cost RR >=1.5, maximum one trade/week across all four FX pairs, NO live trading. **Same-role: -1.06% validation and -2.77% holdout; mixed-role: +2.58% validation but -4.71% holdout. Neither demonstrated durable edge.** Prices are real historical Dukascopy H1, not Exness tick fills. No swap/rollover model.
+
+## H4/D1 hard zones + H1 body engulfing (30 Oct 2026)
+
+- [Full audited Vietnamese report](BAO_CAO_HTF_H4_D1_ENGULFING.md)
+- [Frozen method / risk and exit rules](DE_CUONG_HTF_H4_D1_ENGULFING.md)
+- [Successful GitHub Actions run and source CSV ledgers](https://github.com/thietk-stack/eurusd-auto-backtest/actions/runs/41094413654)
+
+Tested 4 preregistered strategies on genuine historical Dukascopy bid/ask H1 across four currency pairs. Hard zone required >=4 confirmed price reversals on H4/D1; entries required next H1 open after closed body engulfing; SL placed beyond farther of zone edge or engulfing wick plus 1.5 pips, TP gross 2R capped by existing opposing zone, no orders if after-cost RR <1.5, 0.5% equity risk budget, <=1 entry per week across all pairs. **None met validation-and-holdout criteria; no real trading enabled.** No Exness tick/rollover data, no 5–8% monthly edge shown.
