@@ -174,7 +174,7 @@ def run(index,features,start,end,spread_factor=1.0):
                 risk_price=max(1.6*p['atr'][j],5*pip)
                 sl_dist_pips=risk_price/pip
                 # Calculate minimum target AFTER estimated roundtrip spread/slippage
-                est_spread=max(p['spread'][j],SPREAD_EXNESS_ASSUMPTION[sym])*spread_factor
+                est_spread=max(p['spread'][i],SPREAD_EXNESS_ASSUMPTION[sym])*spread_factor
                 assumed_cost=est_spread+2*SLIPPAGE_PER_SIDE_PIPS
                 target_dist_pips=max(2.8*p['atr'][j]/pip,1.75*sl_dist_pips)
                 planned_RR=(target_dist_pips-assumed_cost)/(sl_dist_pips+assumed_cost)
@@ -192,7 +192,7 @@ def run(index,features,start,end,spread_factor=1.0):
                 choices.append(dict(sym=sym,direction=direction,score=int(score),div=bool(div),
                     entry_mid=p['open'][i],stop=p['open'][i]-direction*risk_price,
                     tp=p['open'][i]+direction*target_dist_pips*pip,
-                    entry_spread=float(p['spread'][j]),i=i,time=time,lots=round(lots,2),
+                    entry_spread=float(p['spread'][i]),i=i,time=time,lots=round(lots,2),
                     risk=risk_lot*lots,rr=planned_RR))
         if choices:
             # At same timestamp pick highest score, then stronger RR, then alphabetic pair.
