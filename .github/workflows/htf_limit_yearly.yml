@@ -1,0 +1,77 @@
+name: H4 D1 engulfing 50pct limit entry 2019 to 2025 yearly
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/htf_limit_mid_yearly.py'
+      - 'tests/test_htf_limit_mid.py'
+      - '.github/workflows/htf_limit_yearly.yml'
+permissions:
+  contents: read
+jobs:
+  yearly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore historical EURUSD cache if available
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: htf-eurusd-41094413654
+          restore-keys: |
+            htf-eurusd-
+            aplus-eurusd-
+            eurusd-history-
+      - name: Restore other currency pairs if available
+        uses: actions/cache/restore@v4
+        with:
+          path: portfolio_data
+          key: fx4-h1-41088543737
+          restore-keys: |
+            fx4-h1-
+      - name: Install and validate methodology before downloading
+        run: |
+          python -m pip install -r requirements.txt
+          npm install --no-audit --no-fund
+          node --check scripts/download.mjs
+          node --check scripts/download_portfolio.mjs
+          python -m py_compile scripts/htf_limit_mid_yearly.py scripts/htf_hard_zones_engulf.py
+          python -m pytest -q tests/test_backtest.py tests/test_htf_limit_mid.py
+      - name: Get verified EURUSD H1 from 2018 through 2025, including warmup
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Download GBPUSD AUDUSD USDJPY 2018 through 2025 missing months
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '300'
+        run: node scripts/download_portfolio.mjs
+      - name: Backtest 4 HTF four-touch models each year 2019 through 2025
+        run: python scripts/htf_limit_mid_yearly.py
+      - name: Save all verified FX source data for reproducibility
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: limit-hist-2018-2025-${{ github.run_id }}
+      - name: Publish yearly reports, all fills and unfilled-order counts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: htf-limit-midpoint-yearly-2019-2025
+          path: limit_yearly_results/
+          retention-days: 30
+          if-no-files-found: warn
