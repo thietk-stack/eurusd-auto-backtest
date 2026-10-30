@@ -1,0 +1,64 @@
+name: Pure price action 4-touch hard S-R zones research
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/price_action_hard_zones.py'
+      - '.github/workflows/price_action.yml'
+permissions:
+  contents: read
+jobs:
+  historical_price_action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore verified EURUSD source data
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: aplus-eurusd-41091173869
+          restore-keys: |
+            aplus-eurusd-
+      - name: Restore verified GBPUSD AUDUSD USDJPY source data
+        uses: actions/cache/restore@v4
+        with:
+          path: portfolio_data
+          key: fx4-h1-41088543737
+          restore-keys: |
+            fx4-h1-
+      - name: Static tests and dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m py_compile scripts/price_action_hard_zones.py
+          python -m pytest -q tests/test_backtest.py
+          npm install --no-audit --no-fund
+      - name: Recover genuine EURUSD historical H1 data if cache expired
+        env:
+          FROM: '2020-01-01'
+          TO: '2026-10-30'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Save source cache if newly downloaded
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: priceaction-eurusd-${{ github.run_id }}
+      - name: Backtest hard zones vs role-flip zones on real data
+        run: python scripts/price_action_hard_zones.py
+      - name: Publish all trade ledgers and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hard-4-touch-price-action
+          path: price_action_results/
+          retention-days: 30
+          if-no-files-found: warn
