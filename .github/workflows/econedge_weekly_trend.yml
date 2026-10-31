@@ -1,0 +1,72 @@
+name: EconEdge price trends 4-week momentum vs opposite direction
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/econedge_weekly_trend.py'
+      - 'tests/test_econedge_weekly_trend.py'
+      - '.github/workflows/econedge_weekly_trend.yml'
+permissions:
+  contents: read
+jobs:
+  fixed_weekly_experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 140
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore existing genuine 2018-25 Dukascopy H1 currency quotes
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: limit-hist-2018-2025-41095941707
+          restore-keys: |
+            quantmind-h1-historical-
+            limit-hist-2018-2025-
+      - name: Install and unit-test frozen trend research
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pytest -q tests/test_econedge_weekly_trend.py
+          python -m py_compile scripts/econedge_weekly_trend.py
+          npm install --no-audit --no-fund
+      - name: Verify authentic EURUSD H1 price history 2018-2025
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Verify authentic GBPUSD AUDUSD USDJPY H1 price history 2018-2025
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '300'
+        run: node scripts/download_portfolio.mjs
+      - name: Validate momentum on weekly real H1 data, cost stress and 8-week block bootstrap
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+        run: python scripts/econedge_weekly_trend.py
+      - name: Preserve data for reproducibility
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: econedge-weekly-h1-${{ github.run_id }}
+      - name: Export methodology, decisions, all trades and GO NO-GO report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econedge-weekly-trend-2019-2025
+          path: econedge_weekly_trend_results/
+          if-no-files-found: warn
+          retention-days: 30
