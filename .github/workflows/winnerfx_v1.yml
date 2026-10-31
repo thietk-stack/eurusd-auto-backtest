@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/winnerfx_v1.yml'
+      - 'scripts/winnerfx_v1.py'
+      - 'tests/test_winnerfx_v1.py'
 permissions:
   contents: read
   actions: read
