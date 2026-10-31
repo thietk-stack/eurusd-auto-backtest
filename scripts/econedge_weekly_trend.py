@@ -242,7 +242,7 @@ def audit(trades):
     if trades.empty:return
     if (trades.designed_risk_usd>trades.budget_usd+1e-6).any():
         raise AssertionError("Risk >0.5%")
-    if not (trades.lot>=.01).all():raise AssertionError("Min lot")
+    if not (trades.lot>=LOT_STEP-1e-10).all():raise AssertionError("Min configured lot")
     weeks=trades.week.to_numpy(str)
     if len(np.unique(weeks))!=len(weeks):raise AssertionError("Duplicate weekly trade")
     if (trades.extra_spread_x2_cost_usd<0).any() or (trades.pnl_x2_usd>trades.pnl_usd+1e-7).any():
