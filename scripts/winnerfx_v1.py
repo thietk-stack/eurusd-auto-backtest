@@ -114,10 +114,10 @@ def exit_check(a,b,hourly,sym,side,stop,pip):
         if not np.isfinite(sp) or sp<0:raise ValueError("Invalid real quote spread")
         if side==1:
             if lowest[k]-.5*sp*pip<=stop:
-                return k,min(stop,h["bid"][k]-SLIP*pip),"stop"
+                return k,min(stop-SLIP*pip,h["bid"][k]-SLIP*pip),"stop"
         else:
             if highest[k]+.5*sp*pip>=stop:
-                return k,max(stop,h["ask"][k]+SLIP*pip),"stop"
+                return k,max(stop+SLIP*pip,h["ask"][k]+SLIP*pip),"stop"
     return None
 
 def select_and_replay(index,starts,ends,daily,hourly,first_year,last_year,step,mode):
