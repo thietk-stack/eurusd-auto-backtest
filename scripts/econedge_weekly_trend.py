@@ -77,7 +77,7 @@ def build_weekly_events(index,prices):
         top=opportunities[0]
         cutoff=now.normalize()+pd.Timedelta(days=4,hours=20)
         end=int(index.searchsorted(cutoff,side="right")-1)
-        if end<=i:continue
+        if end<=i or cutoff.year!=now.year:continue
         # Never include next week because Monday signal needs flat portfolio.
         if index[end].isocalendar().week!=now.isocalendar().week:
             continue
@@ -137,9 +137,11 @@ def evaluate_trade(prices,event,side,cash):
             exit_q=(float(p.bid_open.iloc[k]) if side==1
                     else float(p.ask_open.iloc[k]))
         else:
-            # Last observed quote of the Friday bar, before deadline.
-            exit_q=(float(p.bid_close.iloc[k]) if side==1
-                else float(p.ask_close.iloc[k]))
+            # Source's CSV verifies opening bid/ask but not closing bid/ask.
+            # The last H1 midpoint CLOSE is converted to an estimated
+            # exit quote using half this bar's observed OPEN spread.
+            sp_at_close_proxy=quote_spread(p,k,pip)
+            exit_q=float(p.close.iloc[k])-side*.5*sp_at_close_proxy*pip
         result=(k,exit_q,"friday_flat")
     k,exit_quote,reason=result
     spread_out=quote_spread(p,k,pip)
