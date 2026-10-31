@@ -56,3 +56,9 @@ def test_no_automatic_live_trading():
     s=inspect.getsource(study.main)
     assert "live_orders=0" in s
     assert "2026" in study.__doc__
+
+def test_auditor_honors_hypothetical_cent_equivalent_min_lot():
+    import inspect
+    from econedge_weekly_trend import audit
+    code=inspect.getsource(audit)
+    assert "trades.lot>=LOT_STEP-1e-10" in code
