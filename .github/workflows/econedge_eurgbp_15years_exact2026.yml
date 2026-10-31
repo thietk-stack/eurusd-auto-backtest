@@ -1,0 +1,81 @@
+name: EconEdge EURGBP exact 2026 setup backtest 15 years 2011-25
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/econedge_eurgbp_15years_exact2026.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  backtest_eurgbp_exact_history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore verified original 2018-2025 historical quotes if already present
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: limit-hist-2018-2025-41095941707
+          restore-keys: |
+            econedge-weekly-h1-
+            limit-hist-2018-2025-
+      - name: Fetch all 8 earlier 2010-2017 genuine original quote archives and metadata
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 41152773799
+          pattern: econedge-verified-quotes-*
+          path: .
+          merge-multiple: true
+      - name: Install fixed research dependencies and prove exact 2026 model
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pytest -q tests/test_econedge_eurgbp_15years_exact2026.py tests/test_econedge_2026_eurgbp.py tests/test_econedge_weekly_trend.py
+          python -m py_compile scripts/econedge_eurgbp_15years_exact2026.py
+          npm install --no-audit --no-fund
+          node --check scripts/download.mjs
+          node --check scripts/download_portfolio.mjs
+      - name: Verify or acquire missing 2018-2025 authentic historical BID ASK H1 originals
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '96'
+        run: node scripts/download.mjs
+      - name: Verify or acquire missing 2018-2025 GBPUSD historical BID ASK H1 originals
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '288'
+        run: node scripts/download_portfolio.mjs
+      - name: Real 2011–25 two-currency backtest .01 and hypothetical .001 minimum lot
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+        run: python scripts/econedge_eurgbp_15years_exact2026.py
+      - name: Preserve source files for repeatability
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: econedge-eurgbp-2010-2025-${{ github.run_id }}
+      - name: Save full backtest, monthly SHA256 source audit, annual equity and trades
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econedge-eurgbp-2011-2025-exact2026-strategy
+          path: econedge_eurgbp_15_years_results/
+          retention-days: 30
+          if-no-files-found: warn
