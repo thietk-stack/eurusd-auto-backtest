@@ -105,7 +105,7 @@ def main():
     old.signals(new,idx,quotes).to_csv(OUT/"FROZEN_NEW_FIVE_WEEKS_DIRECTION.csv",index=False)
     results={}
     for lot in (.001,.01):
-        key=f"{lot:.3f}" if lot==.001 else ".01"
+        key=".001" if lot==.001 else ".01"
         results[key]={}
         for mode in ("opposite_control","trend"):
             t0,d0,m0=replay(baseline,quotes,lot,mode)
