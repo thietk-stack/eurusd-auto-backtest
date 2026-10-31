@@ -52,3 +52,13 @@ def test_selected_day_only_reads_yesterday_closed():
 def test_weekly_cost_bootstrap_data_zero():
     assert m.block_bootstrap_lower(np.zeros(16),64)==0.
     assert m.block_bootstrap_lower(np.full(16,-1.),64)<0
+
+def test_stop_intrabar_adverse_slippage_not_free_fill():
+    # A BUY stop hit within the H1 bar must be filled below the stop by
+    # at least the frozen assumed 0.1pip, even without a gap.
+    h={"eurusd":{"high":np.array([1.102]),"low":np.array([1.099]),
+         "bid":np.array([1.100]),"ask":np.array([1.1001])}}
+    k,px,reason=m.exit_check(0,1,h,"eurusd",1,1.0995,.0001)
+    assert reason=="stop" and k==0 and px<=1.0995-m.SLIP*.0001+1e-12
+    k,px,reason=m.exit_check(0,1,h,"eurusd",-1,1.101,.0001)
+    assert reason=="stop" and k==0 and px>=1.101+m.SLIP*.0001-1e-12
