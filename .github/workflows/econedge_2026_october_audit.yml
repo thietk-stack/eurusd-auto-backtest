@@ -1,0 +1,62 @@
+name: EconEdge 2026 Oct H1 frozen EURGBP incremental audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/econedge_2026_october_audit.yml'
+      - 'scripts/econedge_2026_october_audit.py'
+      - 'tests/test_econedge_2026_october_audit.py'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  2026_oct_incremental_h1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore exact September baseline 2026 H1 verified quote cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: econedge-eurgbp-2026-41155530651
+      - name: Install pinned dependencies and run no-lookahead tests
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pytest -q tests/test_econedge_2026_october_audit.py tests/test_econedge_2026_eurgbp.py tests/test_econedge_weekly_trend.py
+          python -m py_compile scripts/econedge_2026_october_audit.py
+          npm install --no-audit --no-fund
+      - name: Download verified October EURUSD real Dukascopy BID ASK H1 (up to Saturday 31 00 UTC)
+        env:
+          FROM: '2026-10-01'
+          TO: '2026-10-31'
+          MONTHS_PER_RUN: '1'
+        run: node scripts/download.mjs
+      - name: Download verified October GBPUSD real Dukascopy BID ASK H1 (other portfolio pairs unused)
+        env:
+          PORTFOLIO_FROM: '2026-10-01'
+          PORTFOLIO_TO: '2026-10-31'
+          MONTHS_PER_RUN: '3'
+        run: node scripts/download_portfolio.mjs
+      - name: Reproduce 38 original weeks then append 5 new completed weeks WITHOUT retuning
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+        run: python scripts/econedge_2026_october_audit.py
+      - name: Save immutable monthly SHA, baseline reproduction, new week trade ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econedge-eurgbp-2026-october-frozen-5-new-weeks
+          path: econedge_2026_october_audit/
+          retention-days: 60
+          if-no-files-found: warn
