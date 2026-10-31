@@ -106,6 +106,7 @@ def main():
     results={}
     for lot in (.001,.01):
         key=".001" if lot==.001 else ".01"
+        file_prefix="lot0001" if lot==.001 else "lot001"
         results[key]={}
         for mode in ("opposite_control","trend"):
             t0,d0,m0=replay(baseline,quotes,lot,mode)
@@ -114,11 +115,11 @@ def main():
                 raise AssertionError("Published original baseline not reproduced exactly "+str((key,mode,m0["entered"],m0["net_usd"])))
             tall,dall,ma=replay(events,quotes,lot,mode)
             tn,dn,mn=replay(new,quotes,lot,mode)
-            t0.to_csv(OUT/f"{key}_{mode}_BASELINE_TRADES.csv",index=False)
-            tall.to_csv(OUT/f"{key}_{mode}_ALL_THROUGH_OCT_TRADES.csv",index=False)
-            tn.to_csv(OUT/f"{key}_{mode}_NEW_FIVE_WEEKS_ISOLATED_TRADES.csv",index=False)
-            dall.to_csv(OUT/f"{key}_{mode}_ALL_DECISIONS.csv",index=False)
-            dn.to_csv(OUT/f"{key}_{mode}_NEW_DECISIONS.csv",index=False)
+            t0.to_csv(OUT/f"{file_prefix}_{mode}_BASELINE_TRADES.csv",index=False)
+            tall.to_csv(OUT/f"{file_prefix}_{mode}_ALL_THROUGH_OCT_TRADES.csv",index=False)
+            tn.to_csv(OUT/f"{file_prefix}_{mode}_NEW_FIVE_WEEKS_ISOLATED_TRADES.csv",index=False)
+            dall.to_csv(OUT/f"{file_prefix}_{mode}_ALL_DECISIONS.csv",index=False)
+            dn.to_csv(OUT/f"{file_prefix}_{mode}_NEW_DECISIONS.csv",index=False)
             if len(tall) and (tall.designed_risk_usd>tall.budget_usd+1e-7).any():
                 raise AssertionError("Designed risk > 0.5%")
             if ma["weekly_decisions"]!=43 or mn["weekly_decisions"]!=5:
@@ -161,16 +162,16 @@ def main():
         real_orders=0)
     (OUT/"EURGBP_2026_OCTOBER_AUDIT.json").write_text(json.dumps(overall,indent=2,ensure_ascii=False,default=str))
     lines=["# EconEdge EURUSD GBPUSD — kiểm toán bổ sung 5 tuần thực đến 30/10/2026",
-      "",f"Đã khớp chính xác SHA256 26 tệp nguồn cũ với artifact 2026 #13025105010: \`{digest}\`. Tổng {len(audit)} tệp tháng/cặp, trong đó 2 tệp tháng 10 mới, {len(idx)} H1 giao nhau. **Không đổi một thông số chiến lược nào**.",
+      "",f"Đã khớp chính xác SHA256 26 tệp nguồn cũ với artifact 2026 #13025105010: `{digest}`. Tổng {len(audit)} tệp tháng/cặp, trong đó 2 tệp tháng 10 mới, {len(idx)} H1 giao nhau. **Không đổi một thông số chiến lược nào**.",
       "Đã tái lập chính xác 38 tuần và cả 4 sổ baseline Jan–Sep 2026 (lệnh và PnL). Thêm 5 tuần hoàn chỉnh có Monday 08 UTC và Friday 20 UTC từ 28/09 đến 30/10.",
       "", "| Lot tối thiểu | Hướng | Lệnh mới 5 tuần | PnL mới USD, vốn tiếp nối | Tổng lệnh Jan–Oct | PnL tổng Jan–Oct USD | PF tổng | Stress x2 tổng USD |",
       "|---|---|---:|---:|---:|---:|---:|---:|"]
     for lot in results:
         for mode in results[lot]:
             x=results[lot][mode]
-            m=x["full_JanOct_compounded"];new=x["new_five_weeks_isolated_start_1000"]
+            m=x["full_JanOct_compounded"];new_metrics=x["new_five_weeks_isolated_start_1000"]
             pf="—" if m["pf"] is None else f"{m['pf']:.3f}"
-            lines.append(f"| {lot} | {mode} | {new['entered']} | {x['incremental_pnl_full_account_usd']:+.4f} | {m['entered']} | {m['net_usd']:+.4f} | {pf} | {m['spread_x2_net_usd']:+.4f} |")
+            lines.append(f"| {lot} | {mode} | {new_metrics['entered']} | {x['incremental_pnl_full_account_usd']:+.4f} | {m['entered']} | {m['net_usd']:+.4f} | {pf} | {m['spread_x2_net_usd']:+.4f} |")
     lines+=["", "**Kết luận:** NO-GO tiền thật, không đủ mẫu mới để khẳng định edge. Phần kết quả từ năm 2011–2025 theo đúng chính sách đã lỗ $55,57 trên $1.000 với lot 0,001 (105 lệnh), không được quên khi nhìn 2026.",
        "Swap thực của Exness và khớp lệnh tick không có; lợi nhuận chỉ là PnL mô phỏng giá Dukascopy, không phải PnL thực của tài khoản broker. Không tạo giao dịch hay thay đổi vốn.",
        "Đọc sổ lệnh, quyết định từng tuần và SHA256 nguồn kèm trong artifact để đối chiếu."]
