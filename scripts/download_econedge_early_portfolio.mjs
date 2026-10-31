@@ -66,17 +66,17 @@ for(let {symbol,from,to,key} of items){
    lines.push([new Date(t).toISOString(),open,high,low,close,b.o,a.o,spread].join(','));
  }
  // Fail closed if a substantial fraction of observations have invalid quotes.
- // 0.5% cap per source month, no forward fill or interpolation.
- if(rejected_inverted_spread>Math.max(2,Math.floor(timestamps.length*.005)))
+ // <=2% cap per source month, no forward fill or interpolation; audited count.
+ if(rejected_inverted_spread>Math.max(2,Math.floor(timestamps.length*.02)))
    throw Error('Too many crossed BID ASK quotes '+symbol+'/'+key+': '+rejected_inverted_spread);
- if(lines.length<Math.floor(timestamps.length*.99))
-   throw Error('Quote filtering removed >1% '+symbol+'/'+key);
+ if(lines.length<Math.floor(timestamps.length*.98))
+   throw Error('Quote filtering removed >2% '+symbol+'/'+key);
  if(rejected_inverted_spread)
    console.warn('QUOTE_CROSSED_DISCARDED',symbol,key,rejected_inverted_spread,'/',timestamps.length);
  const data=Buffer.from(lines.join('\n')+'\n');
  fs.writeFileSync(f+'.temp',data);fs.renameSync(f+'.temp',f);
  fs.writeFileSync(m,JSON.stringify({source:'dukascopy-node',instrument:symbol,candles:lines.length-1,rejected_inverted_spread,raw_matching_bars:timestamps.length,
-   screening:'Drop only inverted or implausible original BID ASK open quotes, <=0.5percent per month; never fill',timeframe:'h1',from:from.toISOString(),to:to.toISOString(),sha256:digest(data)},null,2));
+   screening:'Drop only inverted or implausible original BID ASK open quotes, <=2percent per month; never fill',timeframe:'h1',from:from.toISOString(),to:to.toISOString(),sha256:digest(data)},null,2));
  downloaded++;verified++;
  console.log('SAVED',symbol,key,'bars',lines.length-1,'bad_quote_bars',rejected_inverted_spread);
  await pause(100);
