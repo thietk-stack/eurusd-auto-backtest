@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { coversRequestedInterval } from './coverage_guard.mjs';
 import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url);
 const {getHistoricalRates}=require('dukascopy-node');
@@ -40,7 +41,8 @@ for(const m of months){
   if(!fs.existsSync(meta))throw Error('Missing provenance manifest '+f);
   const j=JSON.parse(fs.readFileSync(meta,'utf8')),b=fs.readFileSync(f);
   if(j.source!=='dukascopy-node'||j.sha256!==hash(b)||j.candle_count<5)throw Error('Provenance check failed '+f);
-  finished++;continue;
+  if(coversRequestedInterval(j,m.from,m.to)){finished++;continue;}
+  console.log('REFRESH_PARTIAL_CACHED_MONTH',m.key,'cached_end',j.to_exclusive,'required_end',m.to.toISOString());
  }
  if(downloaded>=limit)break;
  console.log('Download real EURUSD '+m.key+' '+m.from.toISOString()+' to '+m.to.toISOString());
