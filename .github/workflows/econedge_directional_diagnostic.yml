@@ -1,0 +1,60 @@
+name: EconEdge READ ONLY directional signal diagnostic
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/econedge_directional_diagnostic.py'
+      - '.github/workflows/econedge_directional_diagnostic.yml'
+permissions:
+  contents: read
+jobs:
+  forward_direction_diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore authentic verified historical 2018-25 four pair H1 prices
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: limit-hist-2018-2025-41095941707
+          restore-keys: |
+            econedge-weekly-h1-
+            limit-hist-2018-2025-
+      - name: Install and validate independent nontradeable trend hypothesis diagnostic
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pytest -q tests/test_econedge_weekly_trend.py
+          python -m py_compile scripts/econedge_directional_diagnostic.py
+          npm install --no-audit --no-fund
+      - name: Verify original EURUSD H1 quotes and checksum
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '120'
+        run: node scripts/download.mjs
+      - name: Verify original three other currency H1 quotes and checksum
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '300'
+        run: node scripts/download_portfolio.mjs
+      - name: Measure weekly forward price continuation BEFORE position-risk constraints
+        run: python scripts/econedge_directional_diagnostic.py
+      - name: Export every weekly signal and bootstrapped diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econedge-readonly-forward-direction-diagnostic
+          path: econedge_signal_diagnostic_results/
+          if-no-files-found: warn
+          retention-days: 30
