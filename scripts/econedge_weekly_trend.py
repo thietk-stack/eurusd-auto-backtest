@@ -48,7 +48,7 @@ def raw_signal_from_closed_closes(close, signal_index,logret=None):
     z=(float(np.log(close[j]))-float(np.log(close[j-HISTORY_BARS])))/(volatility*np.sqrt(ROLLING_VOL_BARS))
     return float(z)
 
-def build_weekly_events(index,prices):
+def build_weekly_events(index,prices,first_year=2019,last_year=2025):
     # Candidate decision at Monday 08:00 UTC, ONLY uses previous closed H1.
     monday=np.flatnonzero((index.dayofweek==0)&(index.hour==8))
     computed={}
@@ -64,7 +64,7 @@ def build_weekly_events(index,prices):
     events=[]
     for i in monday:
         now=index[i];j=i-1
-        if now.year<2019 or now.year>2025 or j<HISTORY_BARS:continue
+        if now.year<first_year or now.year>last_year or j<HISTORY_BARS:continue
         opportunities=[]
         for sym in SYMBOLS:
             closes,ret,med=computed[sym]
