@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { coversRequestedInterval } from './coverage_guard.mjs';
 import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url);
 const {getHistoricalRates}=require('dukascopy-node');
@@ -43,7 +44,8 @@ for(let {symbol,from,to,key} of items){
  if(fs.existsSync(f)&&fs.existsSync(m)){
   const meta=JSON.parse(fs.readFileSync(m,'utf8'));
   if(meta.instrument!==symbol||meta.source!=='dukascopy-node'||meta.sha256!==digest(fs.readFileSync(f))||meta.candles<5)throw Error('Provenance failure '+f);
-  verified++;continue;
+  if(coversRequestedInterval(meta,from,to)){verified++;continue;}
+  console.log('REFRESH_PARTIAL_CACHED_MONTH',symbol,key,'cached_end',meta.to,'required_end',to.toISOString());
  }
  if(downloaded>=LIMIT)break;
  console.log('REQUEST',symbol,key);
