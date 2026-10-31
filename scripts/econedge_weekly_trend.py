@@ -109,7 +109,10 @@ def evaluate_trade(prices,event,side,cash):
     maxlot_by_lev=(cash*LEVERAGE)/(100000*(1. if sym=="usdjpy" else entry_q))
     lots=math.floor((min(maxlot_by_risk,maxlot_by_lev,.5)+1e-11)/LOT_STEP)*LOT_STEP
     if lots<LOT_STEP-1e-10:return None,"min_lot_incompatible_with_risk"
-    lots=round(lots,2)
+    # Respect optional 0.001 lot research variant; 0.01 baseline unchanged.
+    # Rounding every size to two decimals would overstate a 0.003-lot position
+    # as 0.00 or 0.01 and invalidate its fixed 0.5% risk guarantee.
+    lots=round(lots,max(2,round(-math.log10(LOT_STEP))))
     designed_risk_usd=riskp*point*lots
     if designed_risk_usd>cash*RISK+1e-6:
         raise AssertionError("Designed stop risk >0.5%")
