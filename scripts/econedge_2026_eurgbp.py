@@ -116,16 +116,17 @@ def main():
     usable=results["standard_minlot_001"]["opposite_control"]
     good=bool(guard and usable["entered"]>=15 and usable["net_usd"]>0 and
        usable["spread_x2_net_usd"]>0 and (usable["pf"] or 0)>1.1 and
-       (usable["bootstrap_lower_mean_week_usd"] or -1)<=0 is False)
+       usable["bootstrap_lower_mean_week_usd"] is not None and
+       usable["bootstrap_lower_mean_week_usd"]>0)
     output=dict(status="RESEARCH_ONLY_NO_REAL_BROKER_ORDERS",
         data="Authentic Dukascopy H1 BID ASK OPEN 2025-09 through 2026-09, SHA256 by source month",
         provenance=audit,common_H1=len(idx),realized_year=YEAR,
         full_weeks=len(events),weekly_signals=len(obs),
         fixed_480H_z_threshold=base.MIN_TREND_Z,
         sign="Reverse of four-week trend; matched same-week opposite benchmark",
-        2026_mean_reversal_pips=float(rev.mean()) if len(rev) else None,
-        2026_mean_trend_pips=float(obs.trend_pips.mean()) if len(obs) else None,
-        2026_bootstrap_8week_lower_pips=base.block_bootstrap_lower(rev),
+        mean_reversal_pips_2026=float(rev.mean()) if len(rev) else None,
+        mean_trend_pips_2026=float(obs.trend_pips.mean()) if len(obs) else None,
+        bootstrap_8week_lower_pips_2026=base.block_bootstrap_lower(rev),
         risk_fraction=.005,cap_lev=5.,trade_accounts_start_usd=1000,
         lot_variants="0.01 standard; 0.001 HYPOTHETICAL and broker support not verified",
         books=results,preregistered_gate_pass=bool(good),
@@ -139,7 +140,7 @@ def main():
     (ROOT/"EURGBP_2026_RESULTS.json").write_text(json.dumps(output,ensure_ascii=False,indent=2,default=str))
     lines=["# EUR/USD + GBP/USD — nghiên cứu kiểm định giá H1 thật năm 2026",
       "",f"{len(events)} tuần hoàn chỉnh, {len(obs)} tuần đủ tín hiệu. Nguồn {len(audit)} tệp tháng Bid/Ask đã kiểm tra SHA-256.",
-      "",f"Đảo chiều: pip TB **{output['2026_mean_reversal_pips']}**; Cận dưới bootstrap 95% **{output['2026_bootstrap_8week_lower_pips']}**.",
+      "",f"Đảo chiều: pip TB **{output['mean_reversal_pips_2026']}**; Cận dưới bootstrap 95% **{output['bootstrap_8week_lower_pips_2026']}**.",
       "", "| Lot tối thiểu | Chính sách | Giao dịch | PnL USD | PF | Stress x2 spread USD | DD đóng lệnh |",
       "|---|---|---:|---:|---:|---:|---:|"]
     for a in results:
