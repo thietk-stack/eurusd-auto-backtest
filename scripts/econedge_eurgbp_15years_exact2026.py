@@ -42,7 +42,10 @@ def load_quotes(root=Path(".")):
             digest=hashlib.sha256(file.read_bytes()).hexdigest()
             if digest!=source.get("sha256"):raise ValueError(f"Bad checksum {file}")
             part=verify_month(folder,month,sym)
-            if len(part)!=int(source["candles"]):raise ValueError("Metadata count mismatch "+str(file))
+            # Historical signed manifests sometimes omit row count. The SHA256
+            # is mandatory; compare count only when the field actually exists.
+            if "candles" in source and len(part)!=int(source["candles"]):
+                raise ValueError("Metadata count mismatch "+str(file))
             if len(part)<100:raise ValueError("Abnormally sparse month "+str(file))
             metadata.append(dict(symbol=sym,month=month,n=len(part),
                 sha256=digest,removed_bad_bidask=int(source.get("rejected_inverted_spread",0))))
