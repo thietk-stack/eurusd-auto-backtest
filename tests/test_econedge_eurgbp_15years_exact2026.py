@@ -27,7 +27,10 @@ def test_source_uses_exact_192_months_real_sha256():
     assert "len(months)==192" in s
     assert "verify_month(" in s
     assert "sha256" in s
-    assert "interpolate" not in s and "ffill" not in s
+    # Inspect actual executed calls, not comments discussing why interpolation is banned.
+    import ast
+    methods={getattr(node.func,"attr",None) for node in ast.walk(ast.parse(s)) if isinstance(node,ast.Call)}
+    assert "interpolate" not in methods and "ffill" not in methods
 
 def test_no_four_pair_candidate_ranking():
     s=inspect.getsource(study.frozen_two_pair_events)
