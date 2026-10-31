@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/econedge_15year.yml'
+      - 'scripts/download_econedge_early_portfolio.mjs'
 permissions:
   contents: read
 jobs:
@@ -47,12 +48,12 @@ jobs:
           TO: ${{ matrix.year_end }}-01-01
           MONTHS_PER_RUN: '12'
         run: node scripts/download.mjs
-      - name: Download year GBPUSD AUDUSD USDJPY genuine H1 Bid Ask
+      - name: Download year GBPUSD AUDUSD USDJPY; audit isolated crossed quotes without interpolation
         env:
           PORTFOLIO_FROM: ${{ matrix.year }}-01-01
           PORTFOLIO_TO: ${{ matrix.year_end }}-01-01
           MONTHS_PER_RUN: '36'
-        run: node scripts/download_portfolio.mjs
+        run: node scripts/download_econedge_early_portfolio.mjs
       - name: Preserve verified year for future studies
         if: always()
         uses: actions/cache/save@v4
