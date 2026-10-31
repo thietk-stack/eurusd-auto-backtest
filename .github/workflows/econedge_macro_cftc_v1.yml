@@ -1,0 +1,73 @@
+name: EconEdge official CFTC FX position flows vs real spot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/econedge_macro_cftc_v1.yml'
+      - 'scripts/econedge_macro_cftc_v1.py'
+      - 'tests/test_econedge_macro_cftc_v1.py'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  official_cftc_flow_backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore SHA verified real H1 2010-2025 spot prices
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data
+            portfolio_data
+          key: winnerfx-historical-h1-41159566809
+          restore-keys: |
+            winnerfx-historical-h1-
+            econedge-eurgbp-2010-2025-
+      - name: Download old 2010–17 genuine market quote source archives if cache incomplete
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 41152773799
+          pattern: econedge-verified-quotes-*
+          path: .
+          merge-multiple: true
+      - name: Verify frozen CFTC public-date tests and data science dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pytest -q tests/test_econedge_macro_cftc_v1.py tests/test_econedge_eurgbp_15years_exact2026.py
+          python -m py_compile scripts/econedge_macro_cftc_v1.py
+          npm install --no-audit --no-fund
+      - name: Ensure verified 2018–25 EURUSD Bid/Ask H1 price months
+        env:
+          FROM: '2018-01-01'
+          TO: '2026-01-01'
+          MONTHS_PER_RUN: '96'
+        run: node scripts/download.mjs
+      - name: Ensure verified 2018–25 GBPUSD AUDUSD USDJPY historical H1 originals
+        env:
+          PORTFOLIO_FROM: '2018-01-01'
+          PORTFOLIO_TO: '2026-01-01'
+          MONTHS_PER_RUN: '288'
+        run: node scripts/download_portfolio.mjs
+      - name: Fetch official CFTC futures-only TFF and test lagged weekly position information
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+        run: python scripts/econedge_macro_cftc_v1.py
+      - name: Export immutable CFTC source, monthly quote evidence, all no-go diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econedge-macro-cftc-real-data-2011-2025
+          path: econedge_macro_cot_v1_results/
+          retention-days: 30
+          if-no-files-found: warn
