@@ -11,7 +11,7 @@ permissions:
   contents: read
   actions: read
 jobs:
-  2026_oct_incremental_h1:
+  oct_2026_incremental_h1:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
