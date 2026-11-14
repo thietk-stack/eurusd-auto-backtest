@@ -1,0 +1,22 @@
+name: EconEdge H1 regime code integrity tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/h1_volatility_clustering.py'
+      - 'tests/test_h1_volatility_clustering_integrity.py'
+      - '.github/workflows/econedge_regime_integrity.yml'
+permissions:
+  contents: read
+jobs:
+  test_h1_integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy pytest
+      - run: python -m pytest -q tests/test_h1_volatility_clustering_integrity.py
+      - run: python -m py_compile research/h1_volatility_clustering.py
